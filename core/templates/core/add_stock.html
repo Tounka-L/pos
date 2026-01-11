@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container" style="max-width: 600px;">
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body text-center">
+            <h2 class="h4 fw-bold text-primary mb-1"><i class="fas fa-boxes-stacked"></i> Arrivage Marchandise</h2>
+            <p class="text-muted small">Ajouter du stock au magasin (Monomagasin)</p>
+        </div>
+    </div>
+
+    <form method="POST" class="card shadow-lg p-4 border-0">
+        {% csrf_token %}
+        
+        <div class="mb-4">
+            <label class="form-label fw-bold"><i class="fas fa-tag"></i> Produit à approvisionner</label>
+            <select name="product_id" class="form-select form-select-lg border-primary" required id="product-select">
+                <option value="" selected disabled>Choisir un produit...</option>
+                {% for p in products %}
+                <option value="{{ p.id }}">
+                    {{ p.name }} (Actuel: {{ p.quantity_in_stock }})
+                </option>
+                {% endfor %}
+            </select>
+            <div class="form-text">Cherchez par nom ou modèle.</div>
+        </div>
+
+        <div class="mb-4">
+            <label class="form-label fw-bold"><i class="fas fa-plus-circle"></i> Quantité Reçue</label>
+            <input type="number" name="quantity" class="form-control form-control-lg text-center fw-bold" 
+                   placeholder="Ex: 50" min="1" required>
+        </div>
+
+        <div class="mb-4">
+            <label class="form-label fw-bold text-muted small"><i class="fas fa-money-bill-wave"></i> Nouveau Prix d'Achat (Facultatif)</label>
+            <div class="input-group">
+                <input type="number" name="new_price_achat" class="form-control" placeholder="Si le prix a changé">
+                <span class="input-group-text">FCFA</span>
+            </div>
+            <div class="form-text">Laissez vide si le prix fournisseur n'a pas changé.</div>
+        </div>
+
+        <hr>
+
+        <div class="d-grid gap-2 mt-4">
+            <button type="submit" class="btn btn-success btn-lg py-3">
+                <i class="fas fa-check-double"></i> ENREGISTRER L'ARRIVAGE
+            </button>
+            <a href="{% url 'dashboard' %}" class="btn btn-light text-muted">Annuler</a>
+        </div>
+    </form>
+</div>
+
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('#product-select').select2({
+            placeholder: "Chercher un produit...",
+            width: '100%'
+        });
+    });
+</script>
+<style>
+    /* Ajustement Select2 pour mobile */
+    .select2-container--default .select2-selection--single {
+        height: 50px;
+        padding: 10px;
+        border: 1px solid #ced4da;
+    }
+</style>
+{% endblock %}

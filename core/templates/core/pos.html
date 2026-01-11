@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid mt-3">
+    <div class="row g-3">
+        <div class="col-md-7 col-lg-8">
+            <div class="card p-3 mb-3 border-0 shadow-sm">
+                <form method="GET" action="{% url 'pos_view' %}" class="d-flex gap-2">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
+                        <input type="text" name="q" class="form-control form-control-lg border-start-0" 
+                               placeholder="Chercher un produit..." value="{{ request.GET.q }}" autofocus>
+                    </div>
+                    <button type="submit" class="btn btn-primary px-4 fw-bold">Filtrer</button>
+                </form>
+            </div>
+
+            <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3">
+                {% for product in products %}
+                <div class="col">
+                    <div class="card h-100 border-0 shadow-sm text-center p-2 hover-shadow">
+                        <div class="card-body p-1">
+                            <h6 class="fw-bold mb-1 text-truncate" title="{{ product.name }}">{{ product.name }}</h6>
+                            <div class="text-primary fw-bold mb-1">{{ product.price_vente|floatformat:0 }} F</div>
+                            <div class="badge {% if product.quantity_in_stock > 5 %}bg-light text-success{% else %}bg-light text-danger{% endif %} mb-2">
+                                Stock: {{ product.quantity_in_stock|floatformat:0 }}
+                            </div>
+                            <a href="{% url 'add_to_cart' product.id %}" class="btn btn-sm btn-primary w-100 rounded-pill">
+                                <i class="fas fa-plus-circle me-1"></i> Ajouter
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12 text-center py-5">
+                    <p class="text-muted">Aucun produit trouvé.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="col-md-5 col-lg-4">
+            <div class="card shadow-lg border-0 sticky-top" style="top: 20px; border-radius: 15px;">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold"><i class="fas fa-shopping-cart me-2 text-primary"></i>Panier</h5>
+                    {% if cart %}
+                    <a href="{% url 'clear_cart' %}" class="btn btn-sm btn-outline-danger border-0">Vider</a>
+                    {% endif %}
+                </div>
+
+                <div class="card-body p-0" style="max-height: 300px; overflow-y: auto;">
+                    <table class="table table-hover align-middle mb-0">
+                        <tbody>
+                            {% for p_id, item in cart.items %}
+                            <tr>
+                                <td class="ps-3 py-3">
+                                    <div class="fw-bold text-dark">{{ item.name }}</div>
+                                    <div class="text-muted small">
+                                        {{ item.price|floatformat:0 }} F × {{ item.qty|floatformat:0 }}
+                                    </div>
+                                </td>
+                                <td class="text-end pe-3 py-3">
+                                    <div class="fw-bold text-primary mb-1">{{ item.subtotal|floatformat:0 }} F</div>
+                                    <a href="{% url 'remove_from_cart' p_id %}" class="text-danger text-decoration-none small">
+                                        <i class="fas fa-times-circle"></i> Retirer
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="2" class="py-5 text-center text-muted">
+                                    <i class="fas fa-shopping-basket fa-3x mb-3 opacity-25"></i>
+                                    <p>Le panier est vide</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card-footer bg-light p-4 border-0" style="border-radius: 0 0 15px 15px;">
+                    <form action="{% url 'checkout_sale' %}" method="POST">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label class="small fw-bold text-muted mb-1">Client</label>
+                            <select name="client_id" class="form-select border-0 shadow-sm">
+                                <option value="">Client de passage (Anonyme)</option>
+                                {% for client in all_clients %}
+                                <option value="{{ client.id }}">{{ client.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="small fw-bold text-muted mb-1">Remise (FCFA)</label>
+                            <div class="input-group shadow-sm">
+                                <span class="input-group-text bg-white border-end-0 text-danger"><i class="fas fa-tag"></i></span>
+                                <input type="number" id="discount-input" name="discount" class="form-control border-start-0" placeholder="0" min="0" value="0">
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="small text-muted">Total Brut</span>
+                            <span class="small fw-bold" id="total-brut" data-value="{{ total_cart|stringformat:".2f" }}">
+                                {{ total_cart|floatformat:0 }} F
+                            </span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="h6 text-muted mb-0">NET À PAYER</span>
+                            <span class="h3 text-success fw-bold mb-0" id="net-a-payer">
+                                {{ total_cart|floatformat:0 }} F
+                            </span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="small fw-bold text-muted mb-1">Mode de règlement</label>
+                            <select name="payment_method" class="form-select form-select-lg border-0 shadow-sm">
+                                <option value="CA">💵 Espèces (Cash)</option>
+                                <option value="MM">📱 Mobile Money</option>
+                                <option value="CR">💳 Crédit / Dette</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-success btn-lg w-100 py-3 fw-bold shadow-sm" 
+                                {% if not cart %}disabled{% endif %} style="border-radius: 10px;">
+                            VALIDER LA VENTE <i class="fas fa-check-circle ms-2"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function calculerRemise() {
+        const discountInput = document.getElementById('discount-input');
+        const totalBrutElem = document.getElementById('total-brut');
+        const netAPayerElem = document.getElementById('net-a-payer');
+
+        if (!discountInput || !totalBrutElem || !netAPayerElem) return;
+
+        // Récupérer le total brut depuis l'attribut data (plus fiable)
+        let totalBrut = parseFloat(totalBrutElem.getAttribute('data-value').replace(',', '.'));
+        
+        // Récupérer la remise
+        let remise = parseFloat(discountInput.value);
+        if (isNaN(remise)) remise = 0;
+
+        // Calcul du Net
+        let net = totalBrut - remise;
+        if (net < 0) net = 0;
+
+        // Formatage de l'affichage (ex: 10 500 F)
+        netAPayerElem.innerText = new Intl.NumberFormat('fr-FR').format(Math.round(net)) + ' F';
+    }
+
+    // On attache l'événement une fois que le DOM est prêt
+    document.addEventListener('DOMContentLoaded', function() {
+        const inputRemise = document.getElementById('discount-input');
+        if (inputRemise) {
+            inputRemise.addEventListener('input', calculerRemise);
+        }
+    });
+</script>
+
+<style>
+    .hover-shadow:hover { 
+        transform: translateY(-3px); 
+        box-shadow: 0 8px 15px rgba(0,0,0,0.1) !important; 
+        transition: all 0.2s ease;
+    }
+    .card { border-radius: 10px; }
+    .card-body::-webkit-scrollbar { width: 5px; }
+    .card-body::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 10px; }
+    #net-a-payer { transition: color 0.3s ease; }
+</style>
+{% endblock %}

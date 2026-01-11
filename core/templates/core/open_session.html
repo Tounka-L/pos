@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container" style="max-width: 500px;">
+    <div class="card shadow-lg border-0 mt-5">
+        <div class="card-body p-4 p-md-5 text-center">
+            <div class="bg-light text-success rounded-circle d-inline-flex align-items-center justify-content-center mb-4" style="width: 80px; height: 80px;">
+                <i class="fas fa-cash-register fa-2x"></i>
+            </div>
+            
+            <h2 class="fw-bold h4">Ouverture de Caisse</h2>
+            <p class="text-muted mb-4">Veuillez saisir le montant initial présent dans le tiroir ce matin.</p>
+
+            <form method="POST">
+                {% csrf_token %}
+                
+                <div class="mb-4">
+                    <label class="form-label fw-bold text-dark">Fond de caisse initial (FCFA)</label>
+                    <div class="input-group input-group-lg">
+                        <span class="input-group-text bg-white border-end-0 text-muted"><i class="fas fa-money-bill-wave"></i></span>
+                        <input type="number" name="fond_initial" class="form-control border-start-0 ps-0 fw-bold text-success" 
+                               placeholder="Ex: 5000" min="0" required autofocus>
+                    </div>
+                    <div class="form-text mt-2 text-start">
+                        C'est l'argent utilisé pour rendre la monnaie aux premiers clients.
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-success btn-lg py-3 fw-bold">
+                        OUVRIR LA SESSION <i class="fas fa-play-circle ms-2"></i>
+                    </button>
+                    <a href="{% url 'dashboard' %}" class="btn btn-link text-muted">Retour au tableau de bord</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="mt-4 p-3 bg-light rounded shadow-sm">
+        <small class="text-muted">
+            <i class="fas fa-info-circle me-1"></i> 
+            Une fois la caisse ouverte, toutes les transactions seront enregistrées à votre nom jusqu'à la clôture ce soir.
+        </small>
+    </div>
+</div>
+
+<style>
+    body { background-color: #f0f2f5; }
+    .card { border-radius: 1.5rem; }
+    .input-group-text { border-radius: 0.75rem 0 0 0.75rem; }
+    .form-control { border-radius: 0 0.75rem 0.75rem 0; }
+</style>
+{% endblock %}

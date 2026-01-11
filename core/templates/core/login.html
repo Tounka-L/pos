@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center align-items-center" style="min-height: 80vh;">
+    <div class="col-12 col-md-5 col-lg-4">
+        <div class="card shadow-lg border-0">
+            <div class="card-body p-4 p-md-5">
+                
+                <div class="text-center mb-4">
+                    <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3 shadow" style="width: 70px; height: 70px;">
+                        <i class="fas fa-lock fa-2x"></i>
+                    </div>
+                    <h3 class="fw-bold text-dark">LAFIA ELECTRONIQUE</h3>
+                    <p class="text-muted small">Portail de gestion sécurisé</p>
+                </div>
+
+                {% if form.errors or form.non_field_errors %}
+                    <div class="alert alert-danger border-0 shadow-sm mb-4 animate__animated animate__shakeX" role="alert" style="border-radius: 12px;">
+                        <div class="d-flex">
+                            <i class="fas fa-exclamation-triangle mt-1 me-2"></i>
+                            <div>
+                                <span class="small fw-bold">Échec de connexion :</span>
+                                <ul class="mb-0 small ps-3">
+                                    <li>Identifiants incorrects ou compte non autorisé.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+
+                <form method="POST">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">Nom d'utilisateur</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-0"><i class="fas fa-user text-primary"></i></span>
+                            <input type="text" name="username" 
+                                   class="form-control bg-light border-0 {% if form.username.errors %}is-invalid{% endif %}" 
+                                   placeholder="Ex: gérant_1" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-muted">Mot de passe</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-0"><i class="fas fa-key text-primary"></i></span>
+                            <input type="password" name="password" 
+                                   class="form-control bg-light border-0 {% if form.password.errors %}is-invalid{% endif %}" 
+                                   placeholder="••••••••" required>
+                        </div>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg shadow-sm py-3 fw-bold">
+                            SE CONNECTER <i class="fas fa-sign-in-alt ms-2"></i>
+                        </button>
+                    </div>
+                </form>
+
+                <div class="mt-4 text-center">
+                    <small class="text-muted">Besoin d'aide ? <a href="#" class="text-decoration-none text-primary fw-bold">Contactez l'admin</a></small>
+                </div>
+            </div>
+        </div>
+        
+        <p class="text-center mt-4 text-white-50 smaller">
+            &copy; 2026 RBA SARL - Électronique & Accessoires
+        </p>
+    </div>
+</div>
+
+<style>
+    /* Masquer la navigation pour forcer le focus sur le login */
+    nav, footer { display: none !important; }
+    
+    body {
+        background: linear-gradient(135deg, #0061f2 0%, #6900f2 100%);
+        background-attachment: fixed;
+    }
+    
+    .card {
+        border-radius: 20px;
+    }
+
+    .form-control:focus {
+        box-shadow: none;
+        background-color: #f8f9fa !important;
+        border: 1px solid #0061f2 !important;
+    }
+
+    .animate__shakeX {
+        animation: shakeX 0.5s;
+    }
+
+    @keyframes shakeX {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        75% { transform: translateX(5px); }
+    }
+</style>
+{% endblock %}

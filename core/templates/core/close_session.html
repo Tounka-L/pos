@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container" style="max-width: 500px;">
+    <div class="card shadow-lg border-0 mt-4">
+        <div class="card-header bg-dark text-white text-center py-4 border-0" style="border-radius: 1.5rem 1.5rem 0 0;">
+            <i class="fas fa-lock fa-3x mb-3 text-warning"></i>
+            <h2 class="fw-bold h4 mb-0">Clôture de Session</h2>
+            <p class="small mb-0 opacity-75">Fin de journée de travail</p>
+        </div>
+        
+        <div class="card-body p-4 p-md-5">
+            <div class="alert alert-info border-0 shadow-sm small">
+                <i class="fas fa-info-circle me-2"></i>
+                Veuillez compter physiquement l'argent dans le tiroir et saisir le montant exact ci-dessous.
+            </div>
+
+            <form method="POST">
+                {% csrf_token %}
+                
+                <div class="mb-4">
+                    <label class="form-label fw-bold text-dark">Total Espèces en Caisse (FCFA)</label>
+                    <div class="input-group input-group-lg">
+                        <span class="input-group-text bg-light border-0"><i class="fas fa-coins text-warning"></i></span>
+                        <input type="number" name="fond_final_reel" class="form-control bg-light border-0 fw-bold text-center" 
+                               placeholder="Ex: 45500" required autofocus>
+                    </div>
+                    <div class="form-text mt-2">
+                        Comptez tous les billets et pièces (y compris le fond de caisse).
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label small fw-bold text-muted">Notes ou observations (Optionnel)</label>
+                    <textarea name="notes" class="form-control border-0 bg-light" rows="2" placeholder="Ex: Erreur de monnaie client, dépense urgente..."></textarea>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-danger btn-lg py-3 fw-bold shadow">
+                        FERMER LA CAISSE DÉFINITIVEMENT
+                    </button>
+                    <a href="{% url 'pos_view' %}" class="btn btn-link text-muted small">Annuler et retourner à la vente</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    body { background-color: #f8f9fa; }
+    .card { border-radius: 1.5rem; }
+    .btn-danger { background-color: #dc3545; border: none; }
+</style>
+{% endblock %}
