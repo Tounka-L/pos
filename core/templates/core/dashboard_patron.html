@@ -6,14 +6,12 @@
     <div class="row mb-4 align-items-center">
         <div class="col-12 col-md-6 mb-3 mb-md-0">
             <h2 class="h3 fw-bold text-dark mb-0">LAFIA ELECTRONIQUE - Tableau de Bord</h2>
-            <div class="col-12 col-md-6 mb-3 mb-md-0">
-                {% if user.is_superuser %}
-                <a href="{% url 'export_rapport_pdf' %}?ca={{ total_ventes_jour }}&benef={{ benefice_jour }}&pertes={{ valeur_pertes }}" 
-                class="btn btn-sm btn-outline-danger mt-2">
-                    <i class="fas fa-file-pdf me-1"></i> Télécharger le Rapport PDF
-                </a>
-                {% endif %}
-             </div>
+            {% if user.is_superuser %}
+            <a href="{% url 'export_rapport_pdf' %}?ca={{ total_ventes_jour }}&benef={{ benefice_jour }}&pertes={{ valeur_pertes }}" 
+               class="btn btn-sm btn-outline-danger mt-2">
+                <i class="fas fa-file-pdf me-1"></i> Télécharger le Rapport PDF
+            </a>
+            {% endif %}
             <p class="text-muted small">Analyse de la période sélectionnée</p>
         </div>
         <div class="col-12 col-md-6">
@@ -40,7 +38,7 @@
     {% if sessions_a_valider %}
     <div class="card border-0 shadow-sm mb-4 overflow-hidden">
         <div class="card-header bg-warning text-dark fw-bold py-3">
-            <i class="fas fa-cash-register me-2"></i> Sessions de caisse à valider
+            <i class="fas fa-cash-register me-2"></i> Sessions de caisse à valider (Fin de journée)
         </div>
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
@@ -48,9 +46,10 @@
                     <tr class="small text-uppercase text-muted" style="font-size: 0.7rem;">
                         <th>Vendeur</th>
                         <th>Ouverture</th>
-                        <th class="text-center">Ventes Théoriques</th>
+                        <th class="text-center">Solde Initial</th>
+                        <th class="text-center">Ventes Réelles</th>
+                        <th class="text-center">Total Attendu</th>
                         <th class="text-center">Déclaré Vendeur</th>
-                        <th class="text-center">Écart</th>
                         <th class="text-end px-4">Action</th>
                     </tr>
                 </thead>
@@ -59,26 +58,10 @@
                     <tr>
                         <td class="ps-3"><strong>{{ s.vendeur.username|upper }}</strong></td>
                         <td>{{ s.ouverture_time|date:"d/m H:i" }}</td>
-                        <td class="text-center">{{ s.montant_theorique|default:0|floatformat:0 }} F</td>
-                        
-                        <td class="text-center fw-bold text-primary">
-                            {{ s.montant_declare_vendeur|default:0|floatformat:0 }} F
-                        </td>
-
-                        <td class="text-center">
-                            {% with total_declare=s.montant_declare_vendeur|default:0 theorique=s.montant_theorique|default:0 %}
-                                {% if total_declare == 0 and theorique > 0 %}
-                                    <span class="badge bg-danger rounded-pill">-{{ theorique|floatformat:0 }} F</span>
-                                {% else %}
-                                    {% with calcul_ecart=total_declare|add:"-"|add:theorique %}
-                                        <span class="badge {% if calcul_ecart >= 0 %}bg-success{% else %}bg-danger{% endif %} rounded-pill">
-                                            {{ calcul_ecart|floatformat:0 }} F
-                                        </span>
-                                    {% endwith %}
-                                {% endif %}
-                            {% endwith %}
-                        </td>
-
+                        <td class="text-center text-muted">{{ s.solde_initial|floatformat:0 }} F</td>
+                        <td class="text-center">{{ s.calculer_rapport.total_especes|floatformat:0 }} F</td>
+                        <td class="text-center fw-bold">{{ s.montant_theorique|floatformat:0 }} F</td>
+                        <td class="text-center text-primary fw-bold">{{ s.montant_declare_vendeur|default:0|floatformat:0 }} F</td>
                         <td class="text-end px-4">
                             <form action="{% url 'valider_session_caisse' s.id %}" method="POST" class="d-inline">
                                 {% csrf_token %}
@@ -96,39 +79,51 @@
     {% endif %}
 
     <div class="row g-3 mb-4">
-        <div class="col-6 col-md-3">
+        <div class="col-12 col-md-3">
             <div class="card h-100 border-0 shadow-sm" style="border-left: 4px solid #0061f2 !important;">
                 <div class="card-body">
-                    <div class="text-muted small fw-bold text-uppercase">Chiffre d'Affaire</div>
-                    <div class="h4 fw-bold mb-0 text-primary">{{ total_ventes_jour|default:0|floatformat:0 }} <small>F</small></div>
-                    <div class="text-muted smaller mt-2">{{ nb_transactions_jour }} transactions</div>
+                    <div class="text-muted small fw-bold text-uppercase mb-2">Total Théorique en Caisse</div>
+                    <div class="h3 fw-bold mb-0 text-dark">{{ total_entrees_caisse|floatformat:0 }} <small>F</small></div>
+                    <div class="mt-3 pt-2 border-top">
+                        <div class="d-flex justify-content-between small">
+                            <span class="text-muted">Ventes :</span>
+                            <span class="fw-bold">{{ total_ventes_jour|floatformat:0 }} F</span>
+                        </div>
+                        <div class="d-flex justify-content-between small">
+                            <span class="text-muted">Fonds :</span>
+                            <span class="fw-bold text-success">+{{ total_fonds_initial|floatformat:0 }} F</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+
         <div class="col-6 col-md-3">
             <div class="card h-100 border-0 shadow-sm" style="border-left: 4px solid #198754 !important;">
                 <div class="card-body">
-                    <div class="text-muted small fw-bold text-uppercase">Bénéfice Brut</div>
-                    <div class="h4 fw-bold mb-0 text-success">{{ benefice_jour|default:0|floatformat:0 }} <small>F</small></div>
-                    <div class="text-muted smaller mt-2">Marge réelle calculée</div>
+                    <div class="text-muted small fw-bold text-uppercase">Bénéfice Net</div>
+                    <div class="h4 fw-bold mb-0 text-success">{{ benefice_jour|floatformat:0 }} <small>F</small></div>
+                    <div class="text-muted smaller mt-2">Après déduction des pertes</div>
                 </div>
             </div>
         </div>
+
         <div class="col-6 col-md-3">
             <div class="card h-100 border-0 shadow-sm" style="border-left: 4px solid #dc3545 !important;">
                 <div class="card-body">
-                    <div class="text-muted small fw-bold text-uppercase">Pertes</div>
-                    <div class="h4 fw-bold mb-0 text-danger">{{ valeur_pertes|default:0|floatformat:0 }} <small>F</small></div>
-                    <div class="text-muted smaller mt-2">Inventaire & Rebuts</div>
+                    <div class="text-muted small fw-bold text-uppercase">Valeur Pertes</div>
+                    <div class="h4 fw-bold mb-0 text-danger">{{ valeur_pertes|floatformat:0 }} <small>F</small></div>
+                    <div class="text-muted smaller mt-2">Casse & Inventaire</div>
                 </div>
             </div>
         </div>
+
         <div class="col-6 col-md-3">
             <div class="card h-100 border-0 shadow-sm" style="border-left: 4px solid #ffc107 !important;">
                 <div class="card-body">
-                    <div class="text-muted small fw-bold text-uppercase">Ruptures</div>
+                    <div class="text-muted small fw-bold text-uppercase">Alertes Stock</div>
                     <div class="h4 fw-bold mb-0 text-warning">{{ products_low_stock_count }}</div>
-                    <div class="text-muted smaller mt-2">Articles sous le seuil</div>
+                    <div class="text-muted smaller mt-2">Produits à réapprovisionner</div>
                 </div>
             </div>
         </div>
@@ -139,7 +134,6 @@
             <div class="card border-0 shadow-sm h-100 p-3">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="fw-bold mb-0"><i class="fas fa-chart-line text-primary me-2"></i>Évolution des Ventes</h5>
-                    <small class="text-muted">7 derniers jours</small>
                 </div>
                 <div style="position: relative; height:300px;">
                     <canvas id="salesChart"></canvas>
@@ -149,27 +143,24 @@
 
         <div class="col-lg-4">
             <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
-                    <h5 class="fw-bold mb-0">Alertes Stocks</h5>
-                    <a href="{% url 'add_stock' %}" class="btn btn-sm btn-outline-primary py-1"><i class="fas fa-plus"></i></a>
+                <div class="card-header bg-white py-3 border-0">
+                    <h5 class="fw-bold mb-0">Articles en Rupture</h5>
                 </div>
                 <div class="list-group list-group-flush">
                     {% for p in low_stock_products %}
                     <div class="list-group-item d-flex justify-content-between align-items-center py-3">
-                        <div class="pe-2">
+                        <div>
                             <div class="fw-bold small">{{ p.name }}</div>
-                            <small class="text-muted">Stock: {{ p.quantity_in_stock }} / Seuil: {{ p.stock_alert_threshold }}</small>
+                            <small class="text-muted">Stock actuel: {{ p.quantity_in_stock }}</small>
                         </div>
-                        <div class="text-end">
-                            <span class="badge {% if p.quantity_in_stock == 0 %}bg-danger{% else %}bg-warning text-dark{% endif %} rounded-pill px-3">
-                                {{ p.quantity_in_stock }}
-                            </span>
-                        </div>
+                        <span class="badge {% if p.quantity_in_stock == 0 %}bg-danger{% else %}bg-warning text-dark{% endif %} rounded-pill">
+                            {{ p.quantity_in_stock }}
+                        </span>
                     </div>
                     {% empty %}
                     <div class="text-center py-5 text-muted">
-                        <i class="fas fa-check-circle text-success fa-3x mb-3"></i>
-                        <p>Aucune alerte stock.</p>
+                        <i class="fas fa-check-circle text-success fa-2x mb-2"></i>
+                        <p>Stocks ok !</p>
                     </div>
                     {% endfor %}
                 </div>
@@ -182,25 +173,18 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const ctx = document.getElementById('salesChart').getContext('2d');
-        const labels = {{ labels_jours|safe }};
-        const dataVentes = {{ data_ventes|safe }};
-
         new Chart(ctx, {
             type: 'line',
             data: {
-                labels: labels,
+                labels: {{ labels_jours|safe }},
                 datasets: [{
                     label: 'Ventes',
-                    data: dataVentes,
+                    data: {{ data_ventes|safe }},
                     borderColor: '#0061f2',
                     backgroundColor: 'rgba(0, 97, 242, 0.05)',
                     borderWidth: 3,
                     fill: true,
-                    tension: 0.4,
-                    pointRadius: 5,
-                    pointBackgroundColor: '#0061f2',
-                    pointBorderColor: '#fff',
-                    pointBorderWidth: 2
+                    tension: 0.4
                 }]
             },
             options: {
@@ -208,12 +192,7 @@
                 maintainAspectRatio: false,
                 plugins: { legend: { display: false } },
                 scales: {
-                    y: { 
-                        beginAtZero: true, 
-                        grid: { color: 'rgba(0,0,0,0.05)', drawBorder: false },
-                        ticks: { callback: value => value.toLocaleString() + ' F' }
-                    },
-                    x: { grid: { display: false } }
+                    y: { beginAtZero: true, ticks: { callback: v => v.toLocaleString() + ' F' } }
                 }
             }
         });

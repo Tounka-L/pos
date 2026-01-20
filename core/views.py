@@ -336,18 +336,21 @@ def dashboard_patron_view(request):
         start = today_now.replace(hour=0, minute=0, second=0)
         end = today_now.replace(hour=23, minute=59, second=59)
 
-    # --- 2. RÉCUPÉRATION DES SESSIONS À VALIDER (NOUVEAU) ---
-    # C'est ce qui permettra de supprimer le message d'attente sur le dashboard
+    # --- 2. RÉCUPÉRATION DES SESSIONS À VALIDER ---
     sessions_a_valider = CashSession.objects.filter(status='D').order_by('-ouverture_time')
 
     # --- 3. RÉCUPÉRATION DES DONNÉES FINANCIÈRES ---
     sales_list = Sale.objects.filter(date_sold__range=[start, end])
     pertes_list = Perte.objects.filter(date_perte__range=[start, end])
     
-    total_ventes = sales_list.aggregate(total=Sum('total_sale'))['total'] or 0
+    # NOUVEAU : Récupération des sessions de la période pour le fond de caisse
+    sessions_periode = CashSession.objects.filter(ouverture_time__range=[start, end])
+    total_fonds_initial = sessions_periode.aggregate(total=Sum('solde_initial'))['total'] or Decimal('0.00')
+
+    total_ventes = sales_list.aggregate(total=Sum('total_sale'))['total'] or Decimal('0.00')
     nb_transactions = sales_list.count()
     
-    # Calcul du bénéfice brut (Optimisé)
+    # Calcul du bénéfice brut (Optimisé avec prefetch_related)
     benefice_brut = Decimal('0.00')
     for sale in sales_list.prefetch_related('items__product'):
         for item in sale.items.all():
@@ -355,7 +358,7 @@ def dashboard_patron_view(request):
 
     valeur_pertes = pertes_list.aggregate(
         total=Sum(F('quantite') * F('produit__price_achat'))
-    )['total'] or 0
+    )['total'] or Decimal('0.00')
 
     # Alertes Stock
     products_alert = Product.objects.filter(
@@ -373,8 +376,10 @@ def dashboard_patron_view(request):
 
     # --- 5. ENVOI AU TEMPLATE ---
     context = {
-        'sessions_a_valider': sessions_a_valider, # Pour le tableau de validation
+        'sessions_a_valider': sessions_a_valider,
         'total_ventes_jour': total_ventes,
+        'total_fonds_initial': total_fonds_initial,
+        'total_entrees_caisse': total_ventes + total_fonds_initial,
         'nb_transactions_jour': nb_transactions,
         'benefice_jour': benefice_brut - Decimal(str(valeur_pertes)),
         'products_low_stock_count': products_alert.count(),
