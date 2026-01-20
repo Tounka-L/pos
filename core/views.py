@@ -13,6 +13,7 @@ from django.utils.timezone import make_aware
 from io import BytesIO
 from decimal import Decimal
 from django.contrib.auth import logout
+import json
 # import xhtml2pdf.pisa as pisa # Décommenter si tu as installé xhtml2pdf
 
 from .models import (
@@ -689,3 +690,59 @@ def export_rapport_pdf(request):
     p.showPage()
     p.save()
     return response
+
+def sync_vente(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            
+            # Utilisation d'une transaction pour garantir que tout est créé ou rien
+            with transaction.atomic():
+                # 1. Récupérer la session de caisse ouverte du vendeur
+                # On assume que l'utilisateur est connecté via la PWA
+                cash_session = CashSession.objects.filter(
+                    vendeur=request.user, 
+                    status='O'
+                ).last()
+
+                # 2. Gérer le client (si ID fourni, sinon None)
+                client_id = data.get('client_id')
+                client = Client.objects.filter(id=client_id).first() if client_id else None
+
+                # 3. Créer la Vente principale
+                vente = Sale.objects.create(
+                    vendeur=request.user,
+                    client=client,
+                    total_sale=data['total'],
+                    payment_method=data.get('payment_method', 'CA'), # 'CA' par défaut (Espèces)
+                    cash_session=cash_session,
+                    status='V'
+                )
+
+                # 4. Créer les articles et mettre à jour le stock
+                for item in data['articles']:
+                    produit = Product.objects.get(id=item['id'])
+                    
+                    # Création de la ligne de vente
+                    SaleItem.objects.create(
+                        sale=vente,
+                        product=produit,
+                        quantity=item['qte'],
+                        price_at_sale=item['prix']
+                    )
+
+                    # MISE À JOUR DU STOCK : On déduit la quantité vendue
+                    produit.quantity_in_stock -= item['qte']
+                    produit.save()
+
+            return JsonResponse({
+                'status': 'success', 
+                'message': f'Vente #{vente.pk} synchronisée et stock mis à jour.'
+            }, status=201)
+
+        except Product.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Un produit est introuvable.'}, status=404)
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+    return JsonResponse({'status': 'error', 'message': 'Méthode non autorisée.'}, status=405)

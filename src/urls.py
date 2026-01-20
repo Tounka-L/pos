@@ -19,10 +19,16 @@ from django.urls import path
 from django.urls import include
 from django.contrib.auth import views as auth_views # Importation des vues d'auth
 from django.views.generic.base import RedirectView # Import nécessaire
+from django.views.generic import TemplateView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-     path('', RedirectView.as_view(pattern_name='login', permanent=False), name='index'),
+    path('', RedirectView.as_view(pattern_name='login', permanent=False), name='index'),
+
+     # Cette ligne "trompe" le navigateur en servant le JS à la racine
+    path('serviceworker.js', TemplateView.as_view(
+        template_name="serviceworker.js", 
+        content_type='application/javascript'), name='sw'),
     
    
     # ------------------------------------------------------------------
@@ -32,6 +38,8 @@ urlpatterns = [
     path('login/', auth_views.LoginView.as_view(template_name='core/login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(next_page='/login/'), name='logout'),
     path('', include('core.urls')),  # Inclure les URLs de l'application 'core'
+    path('serviceworker.js', TemplateView.as_view(template_name="static/serviceworker.js", content_type='application/javascript')),
+    path('offline/', TemplateView.as_view(template_name="offline.html"), name='offline'),
 ]
     
    

@@ -163,6 +163,51 @@
             inputRemise.addEventListener('input', calculerRemise);
         }
     });
+    async function validerVenteLocale(panier) {
+    // 1. On vérifie si le panier n'est pas vide
+    if (!panier || panier.length === 0) {
+        alert("Le panier est vide !");
+        return;
+    }
+
+    // 2. On prépare l'objet vente
+    const vente = {
+        date: new Date().toISOString(),
+        // Récupère le nom du client s'il y en a un, sinon "Client Comptant"
+        client: document.getElementById('client-name')?.value || "Client Comptant",
+        // On calcule le total directement pour être sûr de la précision
+        total: panier.reduce((acc, item) => acc + (item.prix * item.qte), 0),
+        // On enregistre une copie du panier
+        articles: JSON.parse(JSON.stringify(panier)),
+        sync: 0 
+    };
+
+    try {
+        // 3. Sauvegarde dans IndexedDB (la table 'ventes')
+        await db.ventes.add(vente);
+        
+        alert("✅ Vente enregistrée localement !");
+        
+        // 4. On vide le panier et on rafraîchit l'interface
+        panier.length = 0; // Vide le tableau sans casser les références
+        if (typeof actualiserAffichagePanier === "function") {
+            actualiserAffichagePanier();
+        }
+        
+    } catch (error) {
+        console.error("Erreur IndexedDB :", error);
+        alert("❌ Erreur lors de l'enregistrement local.");
+    }
+}
+// On récupère le bouton par son ID
+const btnValider = document.getElementById('btn-valider-vente');
+
+if (btnValider) {
+    btnValider.addEventListener('click', () => {
+        // Appelle la fonction avec ta variable globale 'panier'
+        validerVenteLocale(panier); 
+    });
+}
 </script>
 
 <style>

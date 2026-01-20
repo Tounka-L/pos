@@ -1,0 +1,22 @@
+{
+    "name": "RBA Digital - Gestion de Caisse",
+    "short_name": "RBA Digital",
+    "description": "Système de gestion de stock et caisse pour boutiques",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#2c3e50",
+    "orientation": "portrait",
+    "icons": [
+        {
+            "src": "/static/images/icon-192.png",
+            "type": "image/png",
+            "sizes": "192x192"
+        },
+        {
+            "src": "/static/images/icon-512.png",
+            "type": "image/png",
+            "sizes": "512x512"
+        }
+    ]
+}

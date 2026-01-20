@@ -32,5 +32,6 @@ urlpatterns = [
     path('dashboard/', views.dashboard_patron_view, name='dashboard'),
     path('clients/', views.client_list_view, name='client_list'),
     path('caisse/valider/<int:session_id>/', views.valider_session_caisse, name='valider_session_caisse'),
+    path('sync-vente/', views.sync_vente, name='sync_vente'),
     path('rapport/pdf/', views.export_rapport_pdf, name='export_rapport_pdf'),
 ] # <--- On ferme bien la liste ici et c'est tout !
